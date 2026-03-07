@@ -63,6 +63,7 @@ float scene_triangle_query(const Triangle *triangle, const Vector3 *origin, cons
     if (t > epsilon) // Ray intersection
     {
         *hit = vector3_add(*origin, vector3_scale(*dir, t));
+        return t;
     }
     return -1.0f;
 }
