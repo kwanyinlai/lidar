@@ -112,6 +112,7 @@ void build_scene(TriangleArray *scene) {
     int div_floor = 20; // floor tesselation
     int div_walls = 8;  // walls tesselation
 
+
     // Floor
     mesh_add_quad_tesselated(
         scene,

@@ -15,9 +15,7 @@ float scene_triangle_query(const Triangle *triangle, const Vector3 *origin, cons
     Vector3 edge1 = vector3_subtract(triangle->v1, triangle->v0);
     Vector3 edge2 = vector3_subtract(triangle->v2, triangle->v0);
 
-    // Backface culling, assuming CCW-wound triangles.
-    const Vector3 normal = vector3_cross(edge1, edge2); // No need to normalize
-	if (vector3_dot(normal, dir) > 0) return -1.0f;
+
 
     Vector3 ray_cross_e2 = vector3_cross(dir, edge2);
     float det = vector3_dot(edge1, ray_cross_e2);

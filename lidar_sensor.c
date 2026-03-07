@@ -4,7 +4,7 @@
 #include <math.h>
 #include "point_cloud.h"
 
-#define NUM_RINGS 64
+#define NUM_RINGS 1024
 # define MATH_PI 3.14159f
 # define MATH_DEG_TO_RAD (MATH_PI / 180.0f)
 
@@ -22,8 +22,9 @@ typedef struct {
 static SensorState ss;
 
 void init_sensor_state(){
-    ss.min_elev_angle = -30.f * MATH_DEG_TO_RAD;
-    ss.max_elev_angle = 30.f * MATH_DEG_TO_RAD;
+    ss.min_elev_angle = -60.f * MATH_DEG_TO_RAD;
+    ss.max_elev_angle = 60.f * MATH_DEG_TO_RAD;
+    ss.origin = (Vector3){0.0f, 3.0f, 0.0f};
     for (int i = 0 ; i < NUM_RINGS ; i++){
         ss.elevations[i] = ss.min_elev_angle +
           i * (ss.max_elev_angle - ss.min_elev_angle) / NUM_RINGS;
