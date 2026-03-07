@@ -19,6 +19,30 @@
 
 TriangleArray scene;
 
+void display() {
+
+    // BG
+    glClearColor(0.05f, 0.05f, 0.08f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // CAMERA
+    apply_camera();
+
+    // RENDER VISUAL ELEMENTS
+    render_wire();
+
+    // SWAP BUFFERS
+    glutSwapBuffers();
+    glutPostRedisplay();
+}
+
+void reshape(int w, int h) {
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(60.0, (double)w / h, 0.1, 500.0);
+}
+
 
 int main(int argc, char** argv) {
 

@@ -10,8 +10,8 @@ else
     LIBS = -lGL -lGLU -lglut -lm
 endif
 
-SRCS = main.c
-OBJS = $(BUILD_DIR)/$(SRCS:.c=.o)
+SRCS = main.c camera.c scene.c renderer.c
+OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 TARGET = $(BUILD_DIR)/lidar
 HEADERS = scene.h vec3.h camera.h renderer.h scene_state.h
 
@@ -29,3 +29,4 @@ $(BUILD_DIR)/main.o: main.c $(HEADERS)
 
 clean:
 	rm -f $(BUILD_DIR)/*.o $(BUILD_DIR)/*.d $(BUILD_DIR)/$(TARGET)
+	rm -f *.o 
