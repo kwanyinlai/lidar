@@ -7,7 +7,7 @@ void init_point_cloud(PointCloud *pc) {
     pc->capacity = 0;
 }
 
-void point_cloud_push_back(PointCloud *pc, Vector3 pos, float dist) {
+void point_cloud_push_back(PointCloud *pc, Vector3 pos, float dist, float intensity) {
     if (pc->size >= pc->capacity) {
         size_t new_capacity = pc->capacity == 0 ? INIT_SIZE : pc->capacity * 2;
         Vector3 *new_data = realloc(pc->data, new_capacity * sizeof(PointCloudEntry));
@@ -18,7 +18,7 @@ void point_cloud_push_back(PointCloud *pc, Vector3 pos, float dist) {
         pc->data = new_data;
         pc->capacity = new_capacity;
     }
-    PointCloudEntry new_entry = (PointCloudEntry){pos, dist};
+    PointCloudEntry new_entry = (PointCloudEntry){pos, dist, intensity};
     pc->data[pc->size++] = new_entry;
 }
 

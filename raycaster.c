@@ -49,8 +49,8 @@ float scene_triangle_query(const Triangle *triangle, const Vector3 *origin, cons
    Modifies Vector3 *hit
 */
 float cast_ray(const TriangleArray *scene, const Vector3 *origin, const Vector3 dir, 
-    Vector3 *hit){
-    
+    Vector3 *hit, float *intensity){
+    const Triangle *best_triangle = NULL;
     float best_t = -1.0f;
     for (size_t i = 0; i < scene->size; i++) {
         Vector3 candidate_hit;
@@ -58,7 +58,17 @@ float cast_ray(const TriangleArray *scene, const Vector3 *origin, const Vector3 
         if (t > 0.0f && (best_t < 0.0f || t < best_t)) {
             best_t = t;
             *hit = candidate_hit;
+            best_triangle = &scene->data[i];
         } 
+    }
+    if (best_triangle){
+        Vector3 edge1 = vector3_subtract(best_triangle->v1, best_triangle->v0);
+        Vector3 edge2 = vector3_subtract(best_triangle->v2, best_triangle->v0);
+        Vector3 normal = vector3_normalize(vector3_cross(edge1, edge2));
+        *intensity = fmaxf(0.0f, -vector3_dot(normal, dir));
+    }
+    else {
+        *intensity = 0.0f;
     }
     return best_t;
 }

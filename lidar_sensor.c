@@ -4,7 +4,7 @@
 #include <math.h>
 #include "point_cloud.h"
 
-#define NUM_RINGS 1024
+#define NUM_RINGS 256
 # define MATH_PI 3.14159f
 # define MATH_DEG_TO_RAD (MATH_PI / 180.0f)
 
@@ -20,6 +20,7 @@ typedef struct {
 } SensorState;
 
 static SensorState ss;
+static float step = 0.01f;
 
 void init_sensor_state(){
     ss.min_elev_angle = -60.f * MATH_DEG_TO_RAD;
@@ -40,14 +41,14 @@ void cast_all_rays(const TriangleArray *scene, PointCloud *point_cloud){
         // from cos to sin, and vice versa.
         float y = sinf(ss.elevations[i]);
         float z = sinf(ss.theta) * cosf(ss.elevations[i]);
-    
-        float dist = cast_ray(scene, &(ss.origin), (Vector3){x, y, z}, &hit);
-        if (dist > 0) point_cloud_push_back(point_cloud, hit, dist);
+        float intensity;
+        float dist = cast_ray(scene, &(ss.origin), (Vector3){x, y, z}, &hit, &intensity);
+        if (dist > 0) point_cloud_push_back(point_cloud, hit, dist, intensity);
     }
 }
 
 void sensor_step(TriangleArray *scene, PointCloud *point_cloud){
-    ss.theta += 0.001f;
+    ss.theta += step;
     cast_all_rays(scene, point_cloud);
 }
 

@@ -23,8 +23,15 @@ void render_wire(){
 
 void render_cloud(PointCloud *cloud){
     glBegin(GL_POINTS);
-    glColor3d(1,1,1);
+    float y_min = 0.0f;
+    float y_max = 6.0f;
     for (size_t i = 0; i < cloud->size; i++) {
+        // gradient based on height
+        float t = (cloud->data[i].position.y - y_min) / (y_max - y_min);
+        float r = t > 0.5f ? (t - 0.5f) * 2.0f : 0.0f;
+        float g = t < 0.5f ? t * 2.0f : (1.0f - t) * 2.0f;
+        float b = t < 0.5f ? 1.0f - t * 2.0f : 0.0f;
+        glColor3f(r * cloud->data[i].intensity, g * cloud->data[i].intensity, b * cloud->data[i].intensity);
         glVertex3f(cloud->data[i].position.x, cloud->data[i].position.y, cloud->data[i].position.z);
     }
     glEnd();

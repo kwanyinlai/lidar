@@ -5,6 +5,7 @@
 typedef struct {
     Vector3 position;
     float distance;
+    float intensity;
 } PointCloudEntry;
 
 typedef struct {
@@ -13,7 +14,7 @@ typedef struct {
     size_t capacity;
 } PointCloud;
 
-void point_cloud_push_back(PointCloud *cloud, Vector3 position, float distance);
+void point_cloud_push_back(PointCloud *cloud, Vector3 position, float distance, float intensity);
 void point_cloud_free(PointCloud *cloud);
 void init_point_cloud(PointCloud *cloud);
 

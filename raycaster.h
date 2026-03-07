@@ -8,7 +8,8 @@
 float cast_ray(const TriangleArray *scene, 
     const Vector3 *origin, 
     const Vector3 direction, 
-    Vector3 *hit
+    Vector3 *hit,
+    float *intensity
 );
 
 #endif // RAYCASTER_H
