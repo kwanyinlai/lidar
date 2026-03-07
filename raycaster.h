@@ -3,10 +3,11 @@
 
 #include "vec3.h"
 #include "scene.h"
+#include "point_cloud.h"
 
-void cast_ray(const TriangleArray *scene, 
+float cast_ray(const TriangleArray *scene, 
     const Vector3 *origin, 
-    const Vector3 *direction, 
+    const Vector3 direction, 
     Vector3 *hit
 );
 
