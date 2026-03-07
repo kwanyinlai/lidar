@@ -10,10 +10,10 @@ else
     LIBS = -lGL -lGLU -lglut -lm
 endif
 
-SRCS = main.c camera.c scene.c renderer.c
+SRCS = main.c camera.c scene.c renderer.c lidar_sensor.c point_cloud.c raycaster.c
 OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(SRCS))
 TARGET = $(BUILD_DIR)/lidar
-HEADERS = scene.h vec3.h camera.h renderer.h scene_state.h
+HEADERS = scene.h vec3.h camera.h renderer.h scene_state.h lidar_sensor.h point_cloud.h raycaster.h
 
 
 all: $(TARGET)

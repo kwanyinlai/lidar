@@ -1,7 +1,7 @@
 #include "point_cloud.h"
 #define INIT_SIZE 32
 
-void point_cloud(PointCloud *pc) {
+void init_point_cloud(PointCloud *pc) {
     pc->data = NULL;
     pc->size = 0;
     pc->capacity = 0;

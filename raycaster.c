@@ -2,27 +2,6 @@
 #include "scene.h"
 
 
-
-
-/* call Möller–Trumbore on all triangles in scene
-   Modifies Vector3 *hit
-*/
-float cast_ray(const TriangleArray *scene, const Vector3 *origin, const Vector3 dir, 
-    Vector3 *hit){
-    
-    float best_t = -1.0f;
-    for (size_t i = 0; i < scene->size; i++) {
-        Vector3 candidate_hit;
-        float t = scene_triangle_query(&scene->data[i], origin, dir, &candidate_hit);
-        if (t > 0.0f && (best_t < 0.0f || t < best_t)) {
-            best_t = t;
-            *hit = candidate_hit;
-        } 
-    }
-    return best_t;
-}
-
-
 /*
 https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 
@@ -67,4 +46,25 @@ float scene_triangle_query(const Triangle *triangle, const Vector3 *origin, cons
     }
     return -1.0f;
 }
+
+/* call Möller–Trumbore on all triangles in scene
+   Modifies Vector3 *hit
+*/
+float cast_ray(const TriangleArray *scene, const Vector3 *origin, const Vector3 dir, 
+    Vector3 *hit){
+    
+    float best_t = -1.0f;
+    for (size_t i = 0; i < scene->size; i++) {
+        Vector3 candidate_hit;
+        float t = scene_triangle_query(&scene->data[i], origin, dir, &candidate_hit);
+        if (t > 0.0f && (best_t < 0.0f || t < best_t)) {
+            best_t = t;
+            *hit = candidate_hit;
+        } 
+    }
+    return best_t;
+}
+
+
+
     

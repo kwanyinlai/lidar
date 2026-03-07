@@ -15,5 +15,6 @@ typedef struct {
 
 void point_cloud_push_back(PointCloud *cloud, Vector3 position, float distance);
 void point_cloud_free(PointCloud *cloud);
+void init_point_cloud(PointCloud *cloud);
 
 #endif // POINT_CLOUD_H

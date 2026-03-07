@@ -16,8 +16,13 @@
 #include "scene_state.h"
 #include "camera.h"
 #include "renderer.h"
+#include "lidar_sensor.h";
+#include "point_cloud.h"
 
 TriangleArray scene;
+PointCloud cloud;
+
+extern int is_render_scene;
 
 void display() {
 
@@ -29,7 +34,10 @@ void display() {
     apply_camera();
 
     // RENDER VISUAL ELEMENTS
-    render_wire();
+    if (is_render_scene) render_wire();
+
+    sensor_step(&scene, &cloud);
+    render_cloud(&cloud);
 
     // SWAP BUFFERS
     glutSwapBuffers();
@@ -45,7 +53,8 @@ void reshape(int w, int h) {
 
 
 int main(int argc, char** argv) {
-
+    init_sensor_state();
+    init_point_cloud(&cloud);
     triangle_array_init(&scene);
     build_scene(&scene);
 

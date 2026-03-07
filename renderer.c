@@ -6,6 +6,7 @@
 #include "vec3.h"
 #include "scene.h"
 #include "scene_state.h"
+#include "point_cloud.h"
 
 void render_wire(){
     glLineWidth(0.4f);
@@ -18,4 +19,13 @@ void render_wire(){
         glVertex3f(t->v2.x, t->v2.y, t->v2.z);
         glEnd();
     }
+}
+
+void render_cloud(PointCloud *cloud){
+    glBegin(GL_POINTS);
+    glColor3d(1,1,1);
+    for (size_t i = 0; i < cloud->size; i++) {
+        glVertex3f(cloud->data[i].position.x, cloud->data[i].position.y, cloud->data[i].position.z);
+    }
+    glEnd();
 }

@@ -2,9 +2,9 @@
 #define LIDAR_SENSOR_H
 
 #include "scene.h"
+#include "point_cloud.h"
 
 void init_sensor_state();
-void cast_all_rays(const TriangleArray *scene);
-void rotate();
+void sensor_step(const TriangleArray *scene, PointCloud *point_cloud);
 
 #endif  // LIDAR_SENSOR_H

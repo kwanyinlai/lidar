@@ -21,6 +21,7 @@ static float cam_phi = 20.0f; // polar angle from Y axis, in degrees
 static int prev_x, prev_y, mouse_down = 0;
 // ========================================
 
+int is_render_scene = 1.0;
 
 void apply_camera(){
     glMatrixMode(GL_MODELVIEW); 
@@ -40,6 +41,9 @@ void keyboard(unsigned char key, int x, int y) {
             break;
         case '-': 
             cam_dist += 1.0f; 
+            break;
+        case 't':
+            is_render_scene = !(is_render_scene);
             break;
     }
     glutPostRedisplay();
