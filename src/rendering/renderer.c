@@ -8,8 +8,9 @@
 #include "rendering/scene.h"
 #include "rendering/scene_state.h"
 #include "lidar/point_cloud.h"
-#include "lidar/lidar_sensor.h"
+#include "lidar/sensor_control.h"
 #include "lidar/occupancy_map.h"
+
 
 #define DECAY_RATE 0.50f
 
@@ -80,31 +81,36 @@ void render_occupancy_map(const OccupancyMap *map){
         }
         else continue; // skip free and unknown cells
         
-        float cx = map->origin.x + (x + 0.5f) * map->cell_size;
-        float cy = map->origin.y + (y + 0.5f) * map->cell_size;
-        float cz = map->origin.z + (z + 0.5f) * map->cell_size;
+        float centre_x = map->origin.x + (x + 0.5f) * map->cell_size;
+        float centre_y = map->origin.y + (y + 0.5f) * map->cell_size;
+        float centre_z = map->origin.z + (z + 0.5f) * map->cell_size;
         float h = map->cell_size * 0.45f; // half extent
 
 
-        // 12 edges of a cube, each as a line segment
+        // drawing cube using line segments
+        // buffering all vertices in a single glBegin/glEnd block for performance, since there can be many cubes to draw
         // bottom face
-        glVertex3f(cx-h,cy-h,cz-h); glVertex3f(cx+h,cy-h,cz-h);
-        glVertex3f(cx+h,cy-h,cz-h); glVertex3f(cx+h,cy-h,cz+h);
-        glVertex3f(cx+h,cy-h,cz+h); glVertex3f(cx-h,cy-h,cz+h);
-        glVertex3f(cx-h,cy-h,cz+h); glVertex3f(cx-h,cy-h,cz-h);
+        glVertex3f(centre_x-h,centre_y-h,centre_z-h); glVertex3f(centre_x+h,centre_y-h,centre_z-h);
+        glVertex3f(centre_x+h,centre_y-h,centre_z-h); glVertex3f(centre_x+h,centre_y-h,centre_z+h);
+        glVertex3f(centre_x+h,centre_y-h,centre_z+h); glVertex3f(centre_x-h,centre_y-h,centre_z+h);
+        glVertex3f(centre_x-h,centre_y-h,centre_z+h); glVertex3f(centre_x-h,centre_y-h,centre_z-h);
         // top face
-        glVertex3f(cx-h,cy+h,cz-h); glVertex3f(cx+h,cy+h,cz-h);
-        glVertex3f(cx+h,cy+h,cz-h); glVertex3f(cx+h,cy+h,cz+h);
-        glVertex3f(cx+h,cy+h,cz+h); glVertex3f(cx-h,cy+h,cz+h);
-        glVertex3f(cx-h,cy+h,cz+h); glVertex3f(cx-h,cy+h,cz-h);
+        glVertex3f(centre_x-h,centre_y+h,centre_z-h); glVertex3f(centre_x+h,centre_y+h,centre_z-h);
+        glVertex3f(centre_x+h,centre_y+h,centre_z-h); glVertex3f(centre_x+h,centre_y+h,centre_z+h);
+        glVertex3f(centre_x+h,centre_y+h,centre_z+h); glVertex3f(centre_x-h,centre_y+h,centre_z+h);
+        glVertex3f(centre_x-h,centre_y+h,centre_z+h); glVertex3f(centre_x-h,centre_y+h,centre_z-h);
         // verticals
-        glVertex3f(cx-h,cy-h,cz-h); glVertex3f(cx-h,cy+h,cz-h);
-        glVertex3f(cx+h,cy-h,cz-h); glVertex3f(cx+h,cy+h,cz-h);
-        glVertex3f(cx+h,cy-h,cz+h); glVertex3f(cx+h,cy+h,cz+h);
-        glVertex3f(cx-h,cy-h,cz+h); glVertex3f(cx-h,cy+h,cz+h);
+        glVertex3f(centre_x-h,centre_y-h,centre_z-h); glVertex3f(centre_x-h,centre_y+h, centre_z-h);
+        glVertex3f(centre_x+h, centre_y-h, centre_z-h); glVertex3f(centre_x+h, centre_y+h, centre_z-h);
+        glVertex3f(centre_x+h, centre_y-h, centre_z+h); glVertex3f(centre_x+h, centre_y+h, centre_z+h);
+        glVertex3f(centre_x-h, centre_y-h, centre_z+h); glVertex3f(centre_x-h, centre_y+h, centre_z+h);
     }
     glEnd();
 
+}
+
+float lerp(float a, float b, float t){
+    return a + (b - a) * t;
 }
 
 void render_sensor(){
@@ -116,4 +122,57 @@ void render_sensor(){
     glutSolidSphere(0.5f, 12, 12);
     glPopMatrix();
 
+    // direction arrow
+    float dir_angle = get_sensor_dir_angle();
+    float velocity = get_sensor_velocity();
+    float throttle = get_throttle(); 
+
+    float idle_scale = 0.4f;
+    float throttle_scale = 1.8f;
+
+    // Pick scale based on throttle
+    float target_scale = (throttle > 0.5f) ? throttle_scale : idle_scale;
+
+    // Smooth toward it
+    static float current_scale = 0.4f;
+    current_scale = lerp(current_scale, target_scale, 0.05f);
+
+    float arrow_length = 0.4 * velocity * current_scale + 1.f;
+    
+
+    Vector3 arrow_dir = {cosf(dir_angle), 0.0f, sinf(dir_angle)};
+    Vector3 arrow_end = vector3_add(sensor_pos, vector3_scale(arrow_dir, arrow_length));
+
+    glColor3f(0.f, 1.0f, 1.0f);
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex3f(sensor_pos.x, sensor_pos.y, sensor_pos.z);
+    glVertex3f(arrow_end.x, arrow_end.y, arrow_end.z);
+    glEnd();
+
+    // Arrowhead
+    float head_size = 0.3f;
+    float head_angle = 0.5f; // radians
+    float left_angle = dir_angle + M_PI - head_angle;
+    float right_angle = dir_angle + M_PI + head_angle;
+    Vector3 left_head = {
+        arrow_end.x + head_size * cosf(left_angle),
+        arrow_end.y,
+        arrow_end.z + head_size * sinf(left_angle)
+    };
+    Vector3 right_head = {
+        arrow_end.x + head_size * cosf(right_angle),
+        arrow_end.y,
+        arrow_end.z + head_size * sinf(right_angle)
+    };
+    glBegin(GL_LINES);
+    glVertex3f(arrow_end.x, arrow_end.y, arrow_end.z);
+    glVertex3f(left_head.x, left_head.y, left_head.z);
+    glVertex3f(arrow_end.x, arrow_end.y, arrow_end.z);
+    glVertex3f(right_head.x, right_head.y, right_head.z);
+    glEnd();
+    glLineWidth(1.0f);
+
 }
+
+

@@ -1,0 +1,98 @@
+
+# include "rendering/vec3.h"
+# include "lidar/raycaster.h"
+# include <math.h>
+# include <stdlib.h>
+# include "lidar/point_cloud.h"
+# include "lidar/occupancy_map.h"
+# include "lidar/lidar_sensor.h"
+
+
+# define MAX_SPEED 5.0f
+# define MAX_ANGULAR_SPEED (120.0f * MATH_DEG_TO_RAD)
+# define ACCELERATION 3.0f
+# define ANGULAR_ACCELERATION (150.0f * MATH_DEG_TO_RAD)
+# define FRICTION 2.f
+# define ANGULAR_FRICTION (130.0f * MATH_DEG_TO_RAD)
+
+typedef struct {
+    Vector3 origin;
+    float speed;
+    float angular_speed;
+    float dir_angle;
+} SensorState;
+
+static SensorState ss;
+
+static float throttle; // -1, 0 or 1, for backward and forward
+static float steer; // -1, 0 or 1, for left and right'
+
+void init_sensor_state(){
+   
+    ss.origin = (Vector3){0.0f, 3.0f, 0.0f};
+
+    ss.speed = 0.0f;
+    ss.angular_speed = 0.0f;
+    ss.dir_angle = 0.0f;
+
+    init_sensor_rays();
+}
+
+void get_sensor_pos(Vector3 *pos){
+    *pos = ss.origin;
+}
+
+
+void set_throttle(float value){
+    throttle = fmaxf(-1.0f, fminf(1.0f, value));
+}
+
+float get_throttle(){
+    return throttle;
+}
+
+void set_steer(float value){
+    steer = fmaxf(-1.0f, fminf(1.0f, value));
+}
+
+float get_sensor_dir_angle() {
+    return ss.dir_angle;
+}
+
+float get_sensor_velocity() {
+    return ss.speed;
+}
+
+void rover_control(float dt){
+    // simple physics for smooth acceleration and turning
+    printf("Throttle: %.2f, Steer: %.2f\n", throttle, steer);
+    if (throttle != 0) {
+        ss.speed += throttle * ACCELERATION * dt;
+        ss.speed = fmaxf(-MAX_SPEED, fminf(MAX_SPEED, ss.speed));
+    } else {
+        // natural deceleration
+        float friction = FRICTION * dt;
+        if (ss.speed > 0) {
+            ss.speed = fmaxf(0.0f, ss.speed - friction);
+        } else {
+            ss.speed = fminf(0.0f, ss.speed + friction);
+        }
+    }
+    if (steer != 0.f) {
+        ss.angular_speed += steer * ANGULAR_ACCELERATION * dt;
+        ss.angular_speed = fmaxf(-MAX_ANGULAR_SPEED, fminf(MAX_ANGULAR_SPEED, ss.angular_speed));
+    } else {
+        float friction = ANGULAR_FRICTION * dt;
+        if (fabsf(ss.angular_speed) < friction) ss.angular_speed = 0.0f;
+        else ss.angular_speed -= friction * (ss.angular_speed > 0 ? 1 : -1);
+    }
+
+    ss.dir_angle += ss.angular_speed * dt;
+    ss.origin.x += cosf(ss.dir_angle) * ss.speed * dt;
+    ss.origin.z += sinf(ss.dir_angle) * ss.speed * dt;
+    
+    // ss.dir_angle += ss.angular_speed * dt; // TODO: rotate lidar as well? maybe we don't want this though
+    // // even if it is more physically acurate
+}
+
+

@@ -9,7 +9,7 @@
 #include "rendering/scene.h"
 #include "rendering/renderer.h"
 #include "rendering/scene_state.h"
-#include "lidar/lidar_sensor.h"
+#include "lidar/sensor_control.h"
 
 #define MATH_PI 3.14159f
 #define MATH_DEG_TO_RAD (MATH_PI / 180.0f)
@@ -77,8 +77,37 @@ void keyboard(unsigned char key, int x, int y) {
         case 'F':
             toggle_frontiers = !toggle_frontiers;
             break;
+        case 'w':
+        case 'W':
+            set_throttle(1.0f);
+            break;
+        case 's':
+        case 'S':
+            set_throttle(-1.0f);
+            break;
+        case 'a':
+        case 'A':
+            set_steer(-1.0f);
+            break;
+        case 'd':
+        case 'D':
+            set_steer(1.0f);
+            break;
     }
     glutPostRedisplay();
+}
+
+void keyboard_up(unsigned char key, int x, int y) {
+    switch(key) {
+        case 'w': case 'W':
+        case 's': case 'S':
+            set_throttle(0.0f);
+            break;
+        case 'a': case 'A':
+        case 'd': case 'D':
+            set_steer(0.0f);
+            break;
+    }
 }
 
 void mouse_button(int btn, int state, int x, int y) {

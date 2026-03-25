@@ -7,20 +7,19 @@
  * as well as retrieving its position. Integrates with scene geometry and point cloud output.
  */
 
-#ifndef LIDAR_SENSOR_H
-#define LIDAR_SENSOR_H
-
+# ifndef LIDAR_SENSOR_H
+# define LIDAR_SENSOR_H
 
 # define NUM_RINGS 256
+# define MATH_PI 3.14159f
+# define MATH_DEG_TO_RAD (MATH_PI / 180.0f)
+# define MAX_RANGE 30.f
+
+
 
 #include "rendering/scene.h"
 #include "lidar/point_cloud.h"
 #include "lidar/occupancy_map.h"
-
-/**
- * @brief Initialize the internal state of the lidar sensor.
- */
-void init_sensor_state();
 
 /**
  * @brief Advance the sensor simulation by one step and collect point cloud data.
@@ -30,17 +29,8 @@ void init_sensor_state();
  */
 void sensor_step(const TriangleArray *scene, PointCloud *point_cloud, OccupancyMap *map);
 
-/**
- * @brief Move the sensor in the scene.
- * @param forward Amount to move forward.
- * @param side Amount to move sideways.
- */
-void sensor_move(float forward, float side);
 
-/**
- * @brief Get the current position of the sensor.
- * @param pos Output vector for the sensor position.
- */
-void get_sensor_pos(Vector3 *pos);
+void init_sensor_rays();
 
-#endif  // LIDAR_SENSOR_H
+#endif // LIDAR_SENSOR_H
+

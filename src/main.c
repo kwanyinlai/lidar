@@ -17,6 +17,7 @@
 #include "rendering/camera.h"
 #include "rendering/renderer.h"
 #include "lidar/lidar_sensor.h"
+#include "lidar/sensor_control.h"
 #include "lidar/point_cloud.h"
 #include "lidar/occupancy_map.h"
 
@@ -39,6 +40,9 @@ void display() {
 
     // CAMERA
     apply_camera();
+
+    // MOVE ROVER
+    rover_control(delta_time);
 
     // RENDER VISUAL ELEMENTS
     if (is_render_scene) render_wire();
@@ -87,6 +91,7 @@ int main(int argc, char** argv) {
     glutDisplayFunc(display); 
     glutReshapeFunc(reshape);
     glutKeyboardFunc(keyboard);
+    glutKeyboardUpFunc(keyboard_up);
     glutMouseFunc(mouse_button);
     glutMotionFunc(mouse_move);
 
