@@ -6,6 +6,10 @@
 # include "lidar/occupancy_map.h"
 # include "lidar/lidar_sensor.h"
 # include "lidar/sensor_control.h"
+# include "piping/messages.h"
+# include <stdio.h>
+# include <unistd.h>
+
 
 
 # define MAX_SPEED 5.0f
@@ -14,24 +18,21 @@
 # define ANGULAR_ACCELERATION (150.0f * MATH_DEG_TO_RAD)
 # define FRICTION 2.f
 # define ANGULAR_FRICTION (130.0f * MATH_DEG_TO_RAD)
+# define STEP 0.01f
 
-
-static float step = 0.01f;
 
 static float theta;
-static float elevations[NUM_RINGS]; // measured as angle from X-Z plane, = MATH_PI / 2 - polar
-static float min_elev_angle = -30.0f * MATH_DEG_TO_RAD;
-static float max_elev_angle = 89.0f * MATH_DEG_TO_RAD;
+ // measured as angle from X-Z plane, = MATH_PI / 2 - polar
+static const float min_elev_angle = -30.0f * MATH_DEG_TO_RAD;
+static const float max_elev_angle = 89.0f * MATH_DEG_TO_RAD;
+
+int g_scan_cmd_fd = -1;
+int g_ray_batch_results_fd = -1;
 
 // Generate a standard normal (mean=0, stddev=1) random value using the Box-Muller transform.
 // @see https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
-static float gaussian_noise() {
-    float u1 = (rand() + 1.0f) / (RAND_MAX + 2.0f); // avoid log(0)
-    float u2 = (rand() + 1.0f) / (RAND_MAX + 2.0f);
-    return sqrtf(-2.0f * logf(u1)) * cosf(2.0f * 3.14159f * u2);
-    // TODO: hard coded PI, if needed more, then define a constant for it.
-}
 
+/* LEGACY CAST RAYS
 void cast_all_rays(const TriangleArray *scene, PointCloud *point_cloud, OccupancyMap *map){
     const float noise_factor = 0.01f; // realistic noise strength (2% of distance)
     for (int i = 0 ; i < NUM_RINGS ; i++){
@@ -69,9 +70,29 @@ void cast_all_rays(const TriangleArray *scene, PointCloud *point_cloud, Occupanc
         }
     }
 }
+*/
+
+void cast_all_rays(const TriangleArray *scene, PointCloud *point_cloud, OccupancyMap *map){
+    ScanRequest scan_request = {
+        .theta = theta,
+        .max_elev = max_elev_angle,
+        .min_elev = min_elev_angle,
+        .num_rings = NUM_RINGS
+    };
+    get_sensor_pos(&scan_request.origin);
+    write(g_scan_cmd_fd, &scan_request, sizeof(ScanRequest));
+    RayResultBatch ray_result_batch;
+    for (int i = 0; i < NUM_WORKERS; i++) {
+        RayResultBatch ray_result_batch;
+        ssize_t n = read(g_ray_batch_results_fd, &ray_result_batch, sizeof(RayResultBatch));
+        if (n == sizeof(RayResultBatch)) {
+            point_cloud_push_back_multiple(point_cloud, ray_result_batch.rays, ray_result_batch.count);
+        }
+    }
+}
 
 void sensor_step(const TriangleArray *scene, PointCloud *point_cloud, OccupancyMap *map){
-    theta += step;
+    theta += STEP;
     cast_all_rays(scene, point_cloud, map);
 }
 

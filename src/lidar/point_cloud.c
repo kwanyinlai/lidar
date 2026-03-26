@@ -1,4 +1,5 @@
 #include "lidar/point_cloud.h"
+#include "piping/messages.h"
 #define INIT_SIZE 32
 
 void init_point_cloud(PointCloud *pc) {
@@ -20,6 +21,13 @@ void point_cloud_push_back(PointCloud *pc, Vector3 pos, float dist, float intens
     }
     PointCloudEntry new_entry = (PointCloudEntry){pos, dist, intensity, 0.0f};
     pc->data[pc->size++] = new_entry;
+}
+
+void point_cloud_push_back_multiple(PointCloud *pc, RayResult *rays, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        point_cloud_push_back(pc, rays[i].hit, rays[i].distance, rays[i].intensity);
+    }
+    // probably is a faster more efficient way
 }
 
 

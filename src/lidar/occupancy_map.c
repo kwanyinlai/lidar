@@ -1,6 +1,7 @@
 #include <float.h> // for FLT_MAX
 #include "lidar/occupancy_map.h"
 #include "lidar/lidar_sensor.h"
+#include <sys/mman.h>
 
 #define FREE_THRESHOLD -0.4f
 #define OCCUPIED_THRESHOLD 0.4f
@@ -15,15 +16,16 @@ void init_occupancy_map(OccupancyMap *map, int width, int height, int depth, flo
     map->cell_size = cell_size;
     map->origin = origin;
     size_t total_cells = (size_t)width * height * depth;
-    map->data = calloc(total_cells, sizeof(float));
-    if (map->data == NULL) {
-        perror("calloc");
+    // use mmap for shared memory between processes
+    map->data = mmap(NULL, total_cells * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    if (map->data == MAP_FAILED) {
+        perror("mmap");
         exit(1);
     }
 }
 
 void free_occupancy_map(OccupancyMap *map){
-    free(map->data);
+    munmap(map->data, (size_t)map->width * map->height * map->depth * sizeof(float));
     map->data = NULL;
     map->width = 0;
     map->height = 0;

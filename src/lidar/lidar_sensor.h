@@ -10,16 +10,21 @@
 # ifndef LIDAR_SENSOR_H
 # define LIDAR_SENSOR_H
 
-# define NUM_RINGS 256
+
 # define MATH_PI 3.14159f
 # define MATH_DEG_TO_RAD (MATH_PI / 180.0f)
 # define MAX_RANGE 30.f
 
-
-
 #include "rendering/scene.h"
 #include "lidar/point_cloud.h"
 #include "lidar/occupancy_map.h"
+#include "lidar/sensor_control.h"
+
+
+extern int g_scan_cmd_fd; // file descriptor for sending scan commands to coordinator process, set in main.c after forking processes
+extern int g_ray_batch_results_fd; // file descriptor for receiving ray batch results from worker processes, set in main.c after forking processes
+
+float elevations[NUM_RINGS];
 
 /**
  * @brief Advance the sensor simulation by one step and collect point cloud data.
@@ -28,6 +33,13 @@
  * @param map Pointer to the occupancy map.
  */
 void sensor_step(const TriangleArray *scene, PointCloud *point_cloud, OccupancyMap *map);
+
+static inline float gaussian_noise() {
+    float u1 = (rand() + 1.0f) / (RAND_MAX + 2.0f); // avoid log(0)
+    float u2 = (rand() + 1.0f) / (RAND_MAX + 2.0f);
+    return sqrtf(-2.0f * logf(u1)) * cosf(2.0f * 3.14159f * u2);
+    // TODO: hard coded PI, if needed more, then define a constant for it.
+}
 
 
 void init_sensor_rays();

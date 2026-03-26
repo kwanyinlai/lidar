@@ -3,6 +3,8 @@
 #ifndef SENSOR_CONTROL_H
 #define SENSOR_CONTROL_H
 
+# define NUM_RINGS 256
+
 #include "lidar/sensor_control.h"
 # include "rendering/vec3.h"
 

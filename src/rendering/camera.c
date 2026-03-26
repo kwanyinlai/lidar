@@ -55,7 +55,9 @@ void apply_camera() {
 void keyboard(unsigned char key, int x, int y) {
     switch (key) {
         case 27:
-            exit(0);
+            extern void handle_sigint(int);
+            handle_sigint(0);
+            break;
         case 't':
         case 'T':
             is_render_scene = !is_render_scene;

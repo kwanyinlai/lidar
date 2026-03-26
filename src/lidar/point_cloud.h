@@ -8,7 +8,10 @@
 
 #ifndef POINT_CLOUD_H
 #define POINT_CLOUD_H
+
 #include "rendering/vec3.h"
+
+# include "piping/messages.h"
 
 /**
  * @brief Single point entry in the point cloud.
@@ -33,6 +36,8 @@ typedef struct {
  * @brief Add a new point to the cloud.
  */
 void point_cloud_push_back(PointCloud *cloud, Vector3 position, float distance, float intensity);
+
+void point_cloud_push_back_multiple(PointCloud *cloud, RayResult *rays, size_t count);
 
 /**
  * @brief Free memory used by the point cloud.
