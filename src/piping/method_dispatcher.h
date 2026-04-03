@@ -16,6 +16,10 @@ void run_coordinator_loop(int scan_cmd_fd, int ray_batch_results_fd,
 
 void run_worker_loop(int read_fd, int write_fd, TriangleArray*);
 
-void run_frontier_analyzer_loop(int read_fd, int write_fd, const OccupancyMap *occupancy_grid_3d, OccupancyMap *occupancy_grid_2d);
+void run_frontier_analyzer_loop(int voxel_update_read_fd,
+                                int frontier_write_fd, 
+                                int rover_pose_read_fd, 
+                                const OccupancyMap *occupancy_grid_3d,
+                                OccupancyMap *occupancy_grid_2d);
 
 #endif // METHOD_DISPATCHER_H

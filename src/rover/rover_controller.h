@@ -28,7 +28,7 @@ typedef struct {
     float x, z;
     float dir_angle;
     float speed;
-    float ang_speed;
+    float angular_speed;
     int wp_idx;
 } SimState;
 
@@ -39,9 +39,9 @@ void init_rover_controller(void);
 void update_odometry(float dt);
 void update_path_follower(float dt);
 void set_waypoints(Waypoint *wps, int count);
-void render_predicted_path(void);
 void render_pose_error(void);
 void render_waypoints(void);
+void render_predicted_path(void);
 
 
 

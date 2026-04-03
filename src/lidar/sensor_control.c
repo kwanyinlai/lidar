@@ -5,6 +5,7 @@
 # include <stdlib.h>
 # include "scene/point_cloud.h"
 # include "scene/occupancy_map.h"
+# include "scene/scene_collision.h"
 # include "lidar/lidar_sensor.h"
 
 # include "core/physics_constants.h"
@@ -82,8 +83,11 @@ void rover_control(float dt){
     }
 
     ss.dir_angle += ss.angular_speed * dt;
-    ss.origin.x += cosf(ss.dir_angle) * ss.speed * dt;
-    ss.origin.z += sinf(ss.dir_angle) * ss.speed * dt;
+    float dx = cosf(ss.dir_angle) * ss.speed * dt;
+    float dz = sinf(ss.dir_angle) * ss.speed * dt;
+    if (!can_move_in_dir(&scene, &ss.origin.x, &ss.origin.z, dx, dz, ROVER_COLLISION_RADIUS)) {
+        ss.speed = 0.0f;
+    }
     
     // ss.dir_angle += ss.angular_speed * dt; // TODO: rotate lidar as well? maybe we don't want this though
     // // even if it is more physically acurate

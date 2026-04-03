@@ -9,6 +9,7 @@
 #define HIT_LOG_ODDS 6.0f
 #define MISS_LOG_ODDS 0.15f
 #define REFERENCE_DIST 5.f
+#define FLOOR_HIT_IGNORE_CELLS 1
 
 void init_occupancy_map(OccupancyMap *occupancy_grid_3d, int width, int height, int depth, float cell_size, Vector3 origin){
     occupancy_grid_3d->width = width;
@@ -148,7 +149,8 @@ void occupancy_map_ray_cast(const OccupancyMap *occupancy_grid_3d, Vector3 origi
         }
     }
     CELL_STATE prev_state = occupancy_map_get_cell(occupancy_grid_3d, hit_x, hit_y, hit_z);
-    if (did_hit && occupancy_map_in_bounds(occupancy_grid_3d, hit_x, hit_y, hit_z)) {
+    int is_floor_hit = (hit_y - FLOOR_HIT_IGNORE_CELLS) < 0;
+    if (did_hit && !is_floor_hit && occupancy_map_in_bounds(occupancy_grid_3d, hit_x, hit_y, hit_z)) {
         occupancy_grid_3d->data[VOXEL_IDX(occupancy_grid_3d, hit_x, hit_y, hit_z)] += HIT_LOG_ODDS; 
     }
     CELL_STATE new_state = occupancy_map_get_cell(occupancy_grid_3d, hit_x, hit_y, hit_z);

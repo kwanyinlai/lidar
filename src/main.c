@@ -36,14 +36,17 @@ extern int is_render_scene;
 extern int is_paused;
 extern int toggle_frontiers;
 extern RoverMode rover_mode;
+extern int require_replan_write_fd;
 
 
 #include <signal.h>
+#include <sys/select.h>
 #include <sys/wait.h>
 
 // signal handler for clean handling of forked processes
 int g_coord_pid = -1;
 int updated_voxels_pipe_rd = -1; // pipe for receiving updated voxels from occupancy updater process
+static int g_frontier_waypoints_read_fd = -1;
 
 static void sigterm_handler(int sig) { exit(0); }
 
@@ -67,6 +70,47 @@ static void coordinator_sigterm(int sig) {
     exit(0);
 }
 
+static void consume_frontier_waypoints(void) {
+    if (g_frontier_waypoints_read_fd < 0) {
+        return;
+    }
+
+    fd_set waypoint_set;
+    struct timeval timeout = {0, 0};
+
+    while (1) {
+        FD_ZERO(&waypoint_set);
+        FD_SET(g_frontier_waypoints_read_fd, &waypoint_set);
+
+        int ready = select(g_frontier_waypoints_read_fd + 1, &waypoint_set, NULL, NULL, &timeout);
+        if (ready <= 0 || !FD_ISSET(g_frontier_waypoints_read_fd, &waypoint_set)) {
+            return;
+        }
+
+        int waypoint_count = 0;
+        if (read(g_frontier_waypoints_read_fd, &waypoint_count, sizeof(int)) <= 0) {
+            return;
+        }
+
+        if (waypoint_count < 0) {
+            continue;
+        }
+        if (waypoint_count > MAX_WAYPOINTS) {
+            waypoint_count = MAX_WAYPOINTS;
+        }
+
+        Waypoint waypoints[MAX_WAYPOINTS];
+        if (waypoint_count > 0) {
+            ssize_t expected = (ssize_t)(sizeof(Waypoint) * waypoint_count);
+            if (read(g_frontier_waypoints_read_fd, waypoints, expected) != expected) {
+                return;
+            }
+        }
+
+        set_waypoints(waypoints, waypoint_count);
+    }
+}
+
 void create_workers(void){
 
     signal(SIGTERM, sigterm_handler); 
@@ -76,13 +120,15 @@ void create_workers(void){
     int ray_batch_results_pipe[2];    
     int updated_voxels_pipe[2];
     int frontier_waypoints_pipe[2];
+    int rover_pose_pipe[2];
 
-
+    pipe(rover_pose_pipe);
     pipe(ray_batch_results_pipe);
     pipe(scan_cmd_pipe);
     pipe(point_batch_pipe);
     pipe(updated_voxels_pipe);
     pipe(frontier_waypoints_pipe);
+
 
     g_coord_pid = fork();
     if (g_coord_pid < 0) {
@@ -103,6 +149,8 @@ void create_workers(void){
         close(updated_voxels_pipe[1]);  
         close(frontier_waypoints_pipe[0]);
         close(frontier_waypoints_pipe[1]);
+        close(rover_pose_pipe[0]);
+        close(rover_pose_pipe[1]);
 
 
 
@@ -159,6 +207,8 @@ void create_workers(void){
         close(updated_voxels_pipe[0]); // close read end
         close(frontier_waypoints_pipe[0]); // close read end
         close(frontier_waypoints_pipe[1]); // close write end
+        close(rover_pose_pipe[0]); // close read end
+        close(rover_pose_pipe[1]); // close write end
         run_occupancy_updater_loop(point_batch_pipe[0], updated_voxels_pipe[1], &occupancy_grid_3d);
         exit(0);
         // run occupancy updater loop
@@ -178,7 +228,8 @@ void create_workers(void){
         close(ray_batch_results_pipe[0]); // close read end
         close(ray_batch_results_pipe[1]); // close write end
         close(updated_voxels_pipe[1]); // close write end
-        run_frontier_analyzer_loop(updated_voxels_pipe[0], frontier_waypoints_pipe[1], &occupancy_grid_3d, &occupancy_grid_2d);
+        close(rover_pose_pipe[1]); // close write end
+        run_frontier_analyzer_loop(updated_voxels_pipe[0], frontier_waypoints_pipe[1], rover_pose_pipe[0], &occupancy_grid_3d, &occupancy_grid_2d);
         exit(0);
     }
 
@@ -187,14 +238,17 @@ void create_workers(void){
     close(point_batch_pipe[1]);
     // keep ray_batch read end open to read and render point clouds
     close(ray_batch_results_pipe[1]);
-    close(frontier_waypoints_pipe[0]);
     close(frontier_waypoints_pipe[1]);
     close(updated_voxels_pipe[0]);
     close(updated_voxels_pipe[1]); 
+    close(rover_pose_pipe[0]);
     // updated_voxels_pipe_rd = updated_voxels_pipe[0]; // store read end for main loop to read updated voxels from occupancy updater
 
     g_scan_cmd_fd = scan_cmd_pipe[1]; // extern'ed in lidar_sensor.h, used in lidar_sensor.c to send scan commands to coordinator
     g_ray_batch_results_fd = ray_batch_results_pipe[0]; // extern'ed in lidar_sensor.h, used in lidar_sensor.c to receive ray results from coordinator
+    g_frontier_waypoints_read_fd = frontier_waypoints_pipe[0];
+    require_replan_write_fd = rover_pose_pipe[1];
+    
 }
 
 void display() {
@@ -211,20 +265,18 @@ void display() {
     // MOVE ROVER
     if (rover_mode == MODE_AUTO) {
         update_path_follower(delta_time);
-        render_predicted_path();
     }
     
     update_odometry(delta_time);
     rover_control(delta_time);
+    consume_frontier_waypoints();
     
-
-    render_pose_error();
-    render_waypoints();
 
     // RENDER VISUAL ELEMENTS
     if (is_render_scene) render_wire();
 
     render_sensor();
+    render_predicted_path();
 
     // move sensor 
     if (!is_paused) {
@@ -262,9 +314,13 @@ void display() {
     glDepthMask(GL_FALSE);
     render_cloud(&cloud, delta_time);
     if (toggle_frontiers) {
-        render_occupancy_map(&occupancy_grid_3d);
+        // render_occupancy_map(&occupancy_grid_3d);
+        render_occupancy_map(&occupancy_grid_2d);
     }
     glDepthMask(GL_TRUE);
+
+    render_pose_error();
+    render_waypoints();
 
 
     // SWAP BUFFERS
@@ -288,14 +344,14 @@ int main(int argc, char** argv) {
     init_sensor_state();
     init_rover_controller();
 
-    Waypoint square[] = {
-        {5.0f,  0.0f},
-        {5.0f,  5.0f},
-        {0.0f,  5.0f},
-        {0.0f,  0.0f},
-        {20.0f, 0.0f}
+    Waypoint test_path[] = {
+        {6, 0},
+        {12, 0},
+        {12, 6},
+        {6, 6},
+        {6, 12}
     };
-    set_waypoints(square, 5);
+    set_waypoints(test_path, 5);
 
     init_point_cloud(&cloud);
     triangle_array_init(&scene);

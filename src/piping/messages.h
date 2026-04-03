@@ -42,7 +42,7 @@ typedef struct {
 
 typedef struct {
     float theta;
-    RayResult rays[NUM_RINGS / NUM_WORKERS]; // assuming NUM_RINGS is divisible by NUM_WORKERS
+    RayResult rays[NUM_RINGS / NUM_WORKERS]; 
     Vector3 origin;
     int count;
 } RayResultBatch; // from ray worker to scan coordinator
