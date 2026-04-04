@@ -25,7 +25,19 @@ void run_worker_loop(int read_fd, int write_fd, TriangleArray *scene) {
         if (status < 0) {
             exit(1);
         }
+        // invariants failed
+        if (ray_batch.start_ray_idx < 0 ||
+            ray_batch.end_ray_idx > NUM_RINGS ||
+            ray_batch.start_ray_idx > ray_batch.end_ray_idx ||
+            (ray_batch.end_ray_idx - ray_batch.start_ray_idx) != ray_batch.num_rays) {
+            fprintf(stderr,
+                    "discarding invalid RayBatch [%d, %d)\n",
+                    ray_batch.start_ray_idx,
+                    ray_batch.end_ray_idx);
+            continue;
+        }
         ray_result_batch.count = 0;
+        ray_result_batch.theta = ray_batch.theta;
         ray_result_batch.origin = ray_batch.origin;
         for (int i = ray_batch.start_ray_idx; i < ray_batch.end_ray_idx; i++) {
             Vector3 hit;
@@ -62,7 +74,7 @@ void run_worker_loop(int read_fd, int write_fd, TriangleArray *scene) {
                 };
             }
         }
-        if (write_exact(write_fd, &ray_result_batch, sizeof(RayResultBatch)) < 0) {
+        if (write_all(write_fd, &ray_result_batch, sizeof(RayResultBatch)) < 0) {
             exit(1);
         }
     }
@@ -79,9 +91,21 @@ void run_rollout_worker_loop(int read_fd, int write_fd, TriangleArray *scene)
         if (status < 0) {
             exit(1);
         }
+        // invariants failed
+        if (job.start_sample_idx < 0 ||
+            job.end_sample_idx > MPPI_SAMPLES ||
+            job.start_sample_idx > job.end_sample_idx ||
+            job.request.horizon <= 0 ||
+            job.request.horizon > MPPI_HORIZON) {
+            fprintf(stderr,
+                    "discarding invalid RolloutJob [%d, %d)\n",
+                    job.start_sample_idx,
+                    job.end_sample_idx);
+            continue;
+        }
+
         RolloutResult result;
         memset(&result, 0, sizeof(result));
-        result.frame_id = job.frame_id;
         result.start_sample_idx = job.start_sample_idx;
         result.end_sample_idx = job.end_sample_idx;
 
@@ -97,7 +121,7 @@ void run_rollout_worker_loop(int read_fd, int write_fd, TriangleArray *scene)
                                                         request->throttle_noise[i]);
         }
 
-        if (write_exact(write_fd, &result, sizeof(RolloutResult)) < 0) {
+        if (write_all(write_fd, &result, sizeof(RolloutResult)) < 0) {
             exit(1);
         }
     }

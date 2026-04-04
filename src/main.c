@@ -501,7 +501,7 @@ int main(int argc, char** argv) {
     init_sensor_state();
     init_rover_controller();
 
-    // TODO: we want to move to auto generated paths eventually
+    // TODO: we want to move to auto generated paths eventually, not for the course project though
     Waypoint test_path[] = {
         {6, 0},
         {12, 0},
@@ -543,4 +543,5 @@ int main(int argc, char** argv) {
     glutMainLoop();
     return 0;
 }
+
 

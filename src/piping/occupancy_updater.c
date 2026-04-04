@@ -33,22 +33,30 @@ void run_occupancy_updater_loop(int read_fd, int write_fd, OccupancyMap *occupan
                 occupancy_map_ray_cast(occupancy_grid_3d, ray_result_batch.origin, max_range_point, 0, &map_delta);
             }
             if (map_delta.count >= MAX_UPDATED_VOXELS) {
-                if (write_exact(write_fd, &(map_delta.count), sizeof(int)) < 0) {
-                    exit(1);
+                if (write_all(write_fd, &(map_delta.count), sizeof(int)) < 0) {
+                    fprintf(stderr, "failed writing map delta count, skipping remainder of this delta\n");
+                    map_delta.count = 0;
+                    break;
                 }
-                if (write_exact(write_fd, &(map_delta.updates), sizeof(VoxelUpdate) * map_delta.count) < 0) {
-                    exit(1);
+                if (write_all(write_fd, &(map_delta.updates), sizeof(VoxelUpdate) * map_delta.count) < 0) {
+                    fprintf(stderr, "failed writing map delta payload, skipping remainder of this delta\n");
+                    map_delta.count = 0;
+                    break;
                 }
                 map_delta.count = 0;
             }
         }
 
         if (map_delta.count > 0) {
-            if (write_exact(write_fd, &(map_delta.count), sizeof(int)) < 0) {
-                exit(1);
+            if (write_all(write_fd, &(map_delta.count), sizeof(int)) < 0) {
+                fprintf(stderr, "failed writing final map delta count, skipping this delta\n");
+                map_delta.count = 0;
+                continue;
             }
-            if (write_exact(write_fd, &(map_delta.updates), sizeof(VoxelUpdate) * map_delta.count) < 0) {
-                exit(1);
+            if (write_all(write_fd, &(map_delta.updates), sizeof(VoxelUpdate) * map_delta.count) < 0) {
+                fprintf(stderr, "failed writing final map delta payload, skipping this delta\n");
+                map_delta.count = 0;
+                continue;
             }
             map_delta.count = 0;
         }

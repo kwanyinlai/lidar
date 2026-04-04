@@ -21,7 +21,8 @@ static inline int read_exact(int fd, void *buf, size_t len) {
     return 1;
 }
 
-static inline int write_exact(int fd, const void *buf, size_t len) {
+
+static inline int write_all(int fd, const void *buf, size_t len) {
     size_t total = 0;
     while (total < len) {
         ssize_t n = write(fd, (const char *)buf + total, len - total);

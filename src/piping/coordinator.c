@@ -31,7 +31,7 @@ void run_coordinator_loop(int scan_cmd_read_fd, int ray_batch_writes_fd,
             ray_batches[i].start_ray_idx = i * rings_per_worker;
             ray_batches[i].end_ray_idx = (i + 1) * rings_per_worker;
             ray_batches[i].num_rays = rings_per_worker;
-            if (write_exact(ray_task_pipes[i][1], &ray_batches[i], sizeof(RayBatch)) < 0) {
+            if (write_all(ray_task_pipes[i][1], &ray_batches[i], sizeof(RayBatch)) < 0) {
                 exit(1);
             }
         }
@@ -60,14 +60,13 @@ void run_coordinator_loop(int scan_cmd_read_fd, int ray_batch_writes_fd,
             for (int i = 0; i < NUM_WORKERS; i++) {
                 if (!done[i] && FD_ISSET(ray_results_pipes[i][0], &read_fds)) {
                     RayResultBatch ray_result_batch;
-                    int got = read_exact(ray_results_pipes[i][0], &ray_result_batch, sizeof(RayResultBatch));
-                    if (got <= 0) {
+                    if (read_exact(ray_results_pipes[i][0], &ray_result_batch, sizeof(RayResultBatch)) < 0) {
                         exit(1);
                     }
-                    if (write_exact(ray_batch_writes_fd, &ray_result_batch, sizeof(RayResultBatch)) < 0) {
+                    if (write_all(ray_batch_writes_fd, &ray_result_batch, sizeof(RayResultBatch)) < 0) {
                         exit(1);
                     }
-                    if (write_exact(point_batch_write_fd, &ray_result_batch, sizeof(RayResultBatch)) < 0) {
+                    if (write_all(point_batch_write_fd, &ray_result_batch, sizeof(RayResultBatch)) < 0) {
                         exit(1);
                     }
                     done[i] = 1;
@@ -99,19 +98,17 @@ void run_rollout_coordinator_loop(int rollout_cmd_read_fd,
         for (int i = 0; i < NUM_WORKERS; i++) {
             RolloutJob job = {
                 .request = request,
-                .frame_id = request.frame_id,
                 .start_sample_idx = start,
                 .end_sample_idx = start + samples_per_worker
             };
 
-            if (write_exact(rollout_task_pipes[i][1], &job, sizeof(RolloutJob)) < 0) {
+            if (write_all(rollout_task_pipes[i][1], &job, sizeof(RolloutJob)) < 0) {
                 exit(1);
             }
             start += samples_per_worker;
         }
 
         BatchedRolloutResult merged;
-        merged.frame_id = request.frame_id;
         memset(merged.costs, 0, sizeof(merged.costs));
 
         int workers_done = 0;
@@ -157,7 +154,7 @@ void run_rollout_coordinator_loop(int rollout_cmd_read_fd,
             }
         }
 
-        if (write_exact(rollout_result_write_fd, &merged, sizeof(BatchedRolloutResult)) < 0) {
+        if (write_all(rollout_result_write_fd, &merged, sizeof(BatchedRolloutResult)) < 0) {
             exit(1);
         }
     }

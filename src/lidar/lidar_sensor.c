@@ -90,7 +90,7 @@ void cast_all_rays(const TriangleArray *scene,
 
     get_sensor_pos(&scan_request.origin);
 
-    if (write_exact(g_scan_cmd_fd, &scan_request, sizeof(ScanRequest)) <= 0) {
+    if (write_all(g_scan_cmd_fd, &scan_request, sizeof(ScanRequest)) <= 0) {
         exit(1);
     }
 
@@ -103,11 +103,6 @@ void cast_all_rays(const TriangleArray *scene,
             } else {
                 perror("read ray result batch");
             }
-            exit(1);
-        }
-
-        if (ray_result_batch.count < 0 || ray_result_batch.count > (NUM_RINGS / NUM_WORKERS)) {
-            fprintf(stderr, "invalid ray_result_batch.count=%d\n", ray_result_batch.count);
             exit(1);
         }
 

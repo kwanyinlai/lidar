@@ -45,3 +45,4 @@ void run_frontier_analyzer_loop(int voxel_update_read_fd,
                                 OccupancyMap *occupancy_grid_2d);
 
 #endif // METHOD_DISPATCHER_H
+

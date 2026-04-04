@@ -70,7 +70,6 @@ static int require_replan_write_fd = -1;
 static int replan_request_sent = 0;
 static int rollout_cmd_write_fd = -1;
 static int rollout_result_read_fd = -1;
-static int mppi_frame_id = 0;
 // EKF integration is temporarily disabled.
 // static KalmanFilter g_pose_ekf;
 
@@ -125,7 +124,7 @@ static void advance_waypoint_by_proximity(const Path *path,
     }
 }
 
-// TODO: tune, or maybe define these relative to number waypoints generated
+// fixed constants relative to MAX_WAYPOINTS, for sanity
 #define LOOK_BACK 2
 #define LOOK_AHEAD 6
 // Returns cross-track error, and outputs nearest path tangent angle and index of nearest line segment in path
@@ -311,7 +310,6 @@ static int evaluate_rollouts_via_pipe(void)
 
     RolloutRequest request;
     memset(&request, 0, sizeof(request));
-    request.frame_id = mppi_frame_id++;
     request.sample_count = MPPI_SAMPLES;
     request.horizon = MPPI_HORIZON;
     request.init_state = (SimState){
@@ -328,8 +326,9 @@ static int evaluate_rollouts_via_pipe(void)
     memcpy(request.steer_noise, steer_noise, sizeof(steer_noise));
     memcpy(request.throttle_noise, throttle_noise, sizeof(throttle_noise));
 
-    if (write_exact(rollout_cmd_write_fd, &request, sizeof(RolloutRequest)) < 0) {
-        exit(1);
+    if (write_all(rollout_cmd_write_fd, &request, sizeof(RolloutRequest)) < 0) {
+        fprintf(stderr, "rollout request write failed, falling back to synchronous MPPI this frame\n");
+        return 0;
     }
 
     BatchedRolloutResult result;
@@ -338,7 +337,8 @@ static int evaluate_rollouts_via_pipe(void)
         if (result_read == 0) {
             fprintf(stderr, "rollout result pipe closed unexpectedly\n");
         }
-        exit(1);
+        fprintf(stderr, "keeping previous nominal control sequence this frame\n");
+        return -1;
     }
 
     memcpy(trajectory_cost, result.costs, sizeof(trajectory_cost));
@@ -356,8 +356,13 @@ static void mppi_update(void){
 
     float min_cost = FLT_MAX;
 
+    int rollout_status = evaluate_rollouts_via_pipe();
+    if (rollout_status < 0) {
+        return;
+    }
+
     // fallback do manually + for testing
-    if (!evaluate_rollouts_via_pipe()) {
+    if (rollout_status == 0) {
         for (int i = 0; i < MPPI_SAMPLES; i++) {
             trajectory_cost[i] = rollout_cost(i);
         }
@@ -475,7 +480,7 @@ void update_path_follower(float dt) {
     (void) dt; // dt is currently unused but might be needed in the future
     if (active_path.current >= active_path.count) {
         if (!replan_request_sent && require_replan_write_fd >= 0) {
-            if (write_exact(require_replan_write_fd, &rover_pose, sizeof(SensorState)) < 0) {
+            if (write_all(require_replan_write_fd, &rover_pose, sizeof(SensorState)) < 0) {
                 exit(1);
             }
             replan_request_sent = 1;

@@ -53,10 +53,6 @@ typedef struct {
 } ScanRequest; // from main to scan coordinator
 
 typedef struct {
-    
-} PointBatch; // from scan coordinator to occupancy updater 
-
-typedef struct {
     Vector3 origin;
     float theta;
     int start_ray_idx;
@@ -75,7 +71,7 @@ typedef struct {
     RayResult rays[NUM_RINGS / NUM_WORKERS]; 
     Vector3 origin;
     int count;
-} RayResultBatch; // from ray worker to scan coordinator
+} RayResultBatch; // from scan coordinators to main
 
 typedef struct {
     int idx;
@@ -93,7 +89,6 @@ typedef struct {
 } ColumnSummary;
 
 typedef struct {
-    int frame_id;
     int sample_count;
     int horizon;
     SimState init_state;
@@ -105,23 +100,21 @@ typedef struct {
 } RolloutRequest;
 
 typedef struct {
-    int frame_id;
     int start_sample_idx;
     int end_sample_idx;
     RolloutRequest request;
 } RolloutJob;
 
 typedef struct {
-    int frame_id;
     int start_sample_idx;
     int end_sample_idx;
     float costs[MPPI_SAMPLES];
 } RolloutResult;
 
 typedef struct {
-    int frame_id;
     float costs[MPPI_SAMPLES];
 } BatchedRolloutResult;
+
 
 
 #endif // MESSAGES_H
