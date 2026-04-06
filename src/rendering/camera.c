@@ -40,6 +40,7 @@ int is_render_scene = 1;
 int is_paused = 0;
 int toggle_occupancy_map_2d = 0;
 int toggle_occupancy_map_3d = 0;
+int toggle_point_cloud = 1;
 
 static int manual_pause = 0;
 
@@ -96,6 +97,10 @@ void keyboard(unsigned char key, int x, int y) {
         case 'G':
             toggle_occupancy_map_3d = !toggle_occupancy_map_3d;
             sync_pause_state();
+            break;
+        case 'v':
+        case 'V':
+            toggle_point_cloud = !toggle_point_cloud;
             break;
         case 'w':
         case 'W':

@@ -78,11 +78,9 @@ void render_occupancy_map(const OccupancyMap *occupancy_grid_3d){
         CELL_STATE state = occupancy_map_get_cell(occupancy_grid_3d, x, y, z);
         if (state == OCCUPIED){
             float log_odds = occupancy_map_get_log_odds(occupancy_grid_3d, x, y, z);
-            float confidence = fminf(1.0f, log_odds / 5.0f) * 0.5f;
-            glColor4f(confidence, 0.0f, 0.0f, 0.5f);
-            float r = 1.0f, g = 0.0f, b = 0.0f; // red for occupied
-            glColor4f(r * confidence, g * confidence, b * confidence, 0.5f);
-            
+            float confidence = fminf(1.0f, log_odds / 5.0f);
+            float intensity = 0.75f + 0.25f * confidence;
+            glColor4f(1.0f * intensity, 0.35f * intensity, 0.0f, 0.92f);
         }
         else if (state == FREE && is_frontier_point(occupancy_grid_3d, x, y, z)){
             float r = 0.80f, g = 0.80f, b = 0.80f; // green for frontier

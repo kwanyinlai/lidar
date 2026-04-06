@@ -31,6 +31,7 @@ extern int is_render_scene;
 extern int is_paused;
 extern int toggle_occupancy_map_2d;
 extern int toggle_occupancy_map_3d;
+extern int toggle_point_cloud;
 extern RoverMode rover_mode;
 
 
@@ -468,7 +469,9 @@ void display() {
 
     // point cloud render
     glDepthMask(GL_FALSE);
-    render_cloud(&cloud, delta_time);
+    if (toggle_point_cloud) {
+        render_cloud(&cloud, delta_time);
+    }
     if (toggle_occupancy_map_3d) {
         render_occupancy_map(&occupancy_grid_3d);
     }
@@ -510,7 +513,7 @@ int main(int argc, char** argv) {
         {6, 10},
         {-2, 10},
     };
-    set_waypoints(test_path, 6);
+    // set_waypoints(test_path, 6);
 
     init_point_cloud(&cloud);
     triangle_array_init(&scene);
@@ -538,7 +541,7 @@ int main(int argc, char** argv) {
     glutMotionFunc(mouse_move);
 
     printf("mouse drag to orbit, +/- to zoom\n");
-    printf("WASD to drive, P to pause, F to toggle frontier visualization, G to toggle 3D occupancy map, C to toggle between driving modes, T to toggle 2D occupancy map\n");
+    printf("WASD to drive, P to pause, F to toggle frontier visualization, G to toggle 3D occupancy map, T to toggle 2D occupancy map, V to toggle point cloud, C to toggle between driving modes\n");
     glutShowWindow();
     glutMainLoop();
     return 0;

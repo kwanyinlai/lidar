@@ -92,7 +92,7 @@ void cast_all_rays(const TriangleArray *scene,
 
     if (write_all(g_scan_cmd_fd, &scan_request, sizeof(ScanRequest)) <= 0) {
         exit(1);
-    }
+    } 
 
     RayResultBatch ray_result_batch;
     for (int i = 0; i < NUM_WORKERS; i++) {
