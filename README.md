@@ -168,14 +168,7 @@ In the current implementation, ray casting is distributed across worker processe
 ## EKF Sensor Fusion (In Progress)
  
 `rover/ekf_fusion` implements an Extended Kalman Filter over the state `[x, z, θ]`.
- 
-**Predict step** — implemented. Advances state via odometry delta and propagates uncertainty:
-```
-P = F·P·Fᵀ + Q
-```
-where `F` is the motion Jacobian accounting for heading-position coupling.
- 
-**Correct step** — pending. Requires a scan-matched pose estimate as input. Currently commented out in `rover_controller.c`.
+The logic for the EKF correction step is complete but depends on an incomplete `localization/scan_matching` module, which will use Iterative Closest Point (ICP) to generate pose predictions. Additionally, this currently depends on the generation of simulated, synthetic data which is unattainable under real physical conditions; this will eventually be replaced by a more realistic and robust system, which is currently being planned. Coming soon.
  
 ```c
 // EKF integration is temporarily disabled.
