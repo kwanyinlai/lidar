@@ -1,6 +1,6 @@
 # LiDAR Rover Simulation with Autonomous Navigation and Frontier Exploration
 
-A real-time 3D LiDAR rover simulation written in C with OpenGL/GLUT rendering. The rover autonomously explores an environment using frontier-based exploration (CORRECTION: frontier-based exploration is not complete yet but will be implemented soon), building an occupancy map from raycasted LiDAR scans as it moves.
+A real-time 3D LiDAR rover simulation written in C with OpenGL/GLUT rendering. The rover autonomously explores the environment using frontier-based waypoint generation on a projected 2D occupancy map, while building a live occupancy grid from raycasted LiDAR scans.
 
 <img width="753" height="757" alt="Screenshot 2026-04-03 at 6 06 45 PM" src="https://github.com/user-attachments/assets/04cbdf64-4cd9-49a4-b01b-2dbf83e0e28a" />
 <img width="735" height="662" alt="Screenshot 2026-04-03 at 6 11 26 PM" src="https://github.com/user-attachments/assets/2dd5b375-8b8f-4755-92b3-4b3437a9fef2" />
@@ -9,16 +9,20 @@ A real-time 3D LiDAR rover simulation written in C with OpenGL/GLUT rendering. T
 ---
  
 ## Features
- 
-- **LiDAR raycasting** — rotating sensor sweeps the scene using Möller–Trumbore ray-triangle intersection, producing a live point cloud with height-based colour gradient
-- **3D occupancy mapping** — log-odds voxel grid updated via 3D DDA traversal; tracks free, occupied, and unknown cells
-- **2D projected map** — column-summed occupancy map at rover height for 2D path planning and frontier visualisation
-- **Frontier detection** — identifies boundaries between free and unknown space for exploration targeting
-- **MPPI controller** — Model Predictive Path Integral controller with parallel rollout evaluation for autonomous navigation
-- **Rover physics** — differential drive model with acceleration, friction, angular dynamics, and triangle mesh collision
-- **Multi-process pipeline** — ray casting, occupancy updates, frontier analysis, and MPPI rollouts each run in separate forked processes communicating via Unix pipes
-- **Manual and autonomous modes** — switch between WASD manual control and MPPI auto-navigation at runtime
-- **EKF sensor fusion** — in progress; predict step implemented, correct step pending scan matching
+
+- LiDAR raycasting — rotating sensor sweeps the scene using Möller–Trumbore ray-triangle intersection, producing a live point cloud with height-based colour gradient
+- 3D occupancy mapping — log-odds voxel grid updated via 3D DDA traversal; tracks free, occupied, and unknown cells
+- 2D projected map — column-summed occupancy map at rover height for navigation and frontier visualisation
+- Autonomous waypoint generation — frontier planner selects reachable frontier targets and generates waypoint paths automatically
+- Clearance-aware path planning — projected pathing avoids cells that are too close to obstacles for the rover to fit through
+- Waypoint skipping — rover can advance past already-reached intermediate waypoints, including the final waypoint
+- Frontier detection — identifies boundaries between free and unknown space for exploration targeting
+- MPPI controller — Model Predictive Path Integral controller with parallel rollout evaluation for autonomous navigation
+- Rover physics — differential drive model with acceleration, friction, angular dynamics, and triangle mesh collision
+- Multi-process pipeline — ray casting, occupancy updates, frontier analysis, and MPPI rollouts each run in separate forked processes communicating via Unix pipes
+- Manual and autonomous modes — switch between WASD manual control and autonomous waypoint following at runtime
+- Point cloud toggle — runtime keyboard toggle for showing or hiding the live LiDAR point cloud
+- EKF sensor fusion — in progress; predict step implemented, correct step pending scan matching
  
 ---
  
@@ -33,6 +37,7 @@ A real-time 3D LiDAR rover simulation written in C with OpenGL/GLUT rendering. T
 | `F` | Toggle 2D frontier visualisation |
 | `G` | Toggle 3D occupancy map (pauses sim) |
 | `T` | Toggle scene wireframe |
+| `V` | Toggle point cloud visibility |
 | `+/-` | Zoom in / out |
 | Right drag | Orbit camera |
 | Middle drag | Pan camera |
@@ -54,6 +59,9 @@ main.c
   │   ├── rover_physics.c    Differential drive: acceleration, friction, collision response
   │   ├── rover_controller.c MPPI controller, path following, waypoint management, odometry
   │   └── ekf_fusion.c       Extended Kalman Filter — predict step done, correct step in progress
+  |   ├── frontier_exploration/
+  │   ├── frontier_planner.c   2D frontier selection, reachability scoring, waypoint generation
+  │   └── frontier_planner.h   Planner entry point used by frontier_analyzer
   │
   ├── lidar/
   │   ├── lidar_sensor.c     Sensor state, elevation ring initialisation
