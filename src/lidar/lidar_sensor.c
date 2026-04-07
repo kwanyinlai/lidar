@@ -12,6 +12,7 @@
 #include "piping/messages.h"
 #include "scene/occupancy_map.h"
 #include "scene/point_cloud.h"
+ 
 
 #define STEP 0.02f
 

@@ -117,5 +117,4 @@ typedef struct {
 } BatchedRolloutResult;
 
 
-
 #endif // MESSAGES_H
